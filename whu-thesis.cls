@@ -53,6 +53,7 @@
     class .choices:nn       =
       { academic , professional , paper , design }
       { \tl_gset_eq:NN \g__whu_option_class_tl \l_keys_choice_tl },
+    class .initial:n = { academic }, 
     % 文档类型
 
     draft         .choice:,
@@ -204,7 +205,7 @@
 \RequirePackage { geometry }
 \clist_if_in:nVTF { bachelor , opening } \g__whu_option_type_tl
   { \geometry { hmargin = 3 cm , top = 2.5 cm , bottom = 2 cm , ignoreall } }
-  { \geometry { margin = 2.5 cm , ignoreall } }
+  { \geometry { hmargin = 2.5 cm , vmargin = 2.54cm } }
 % 本科、开题报告左右边距 3 cm，上边距 2.5 cm，下边距 2 cm
 % 硕博边距 2.5 cm。
 
@@ -805,6 +806,7 @@
 \tl_new:N \g__whu_info_direction_tl
 \tl_new:N \g__whu_info_date_tl
 \clist_new:N \g__whu_info_advisor_clist
+\clist_new:N \g__whu_info_advisor_outer_clist
 \clist_new:N \g__whu_info_keywords_clist
 \clist_new:N \g__whu_info_keywords_en_clist
 
@@ -826,6 +828,7 @@
     date           .tl_gset:N    = \g__whu_info_date_tl,
     advisor-name   .tl_gset:N    = \g__whu_info_advisor_name_tl,
     advisor        .clist_gset:N = \g__whu_info_advisor_clist,
+    advisor-outer  .clist_gset:N = \g__whu_info_advisor_outer_clist,
     keywords       .clist_gset:N = \g__whu_info_keywords_clist,
     keywords *     .clist_gset:N = \g__whu_info_keywords_en_clist,
 
@@ -1041,6 +1044,23 @@
 % 分散函数
 \cs_new_protected:Npn \__whu_spread_with:nn #1#2
   { \tl_map_inline:xn {#1} { ##1 #2 } \unskip }
+\cs_new_protected:Npn \__whu_spread_box:nn #1#2 % #1: 宽度  #2: 内容
+  { \hbox_to_wd:nn { #1 } 
+      { \tl_map_inline:xn { #2 } { ##1 \hfil } \unskip }
+  }
+\cs_new_protected:Npn \__whu_spread_box_with_end_spaces:nn #1#2
+  {
+    \hbox_to_wd:nn { #1 }
+      {
+        \hspace{0.19cm}
+        \tl_map_inline:xn { #2 } { ##1 \hfil } \unskip
+        \hspace{0.19cm}
+      }
+  }
+
+% 分散函数，两端再加上 0.19cm 的间距
+\cs_new_protected:Npn \__whu_spread_with_both_end_spaces:nn #1#2
+  { \hspace{0.19cm} \__whu_spread_with:nn #1#2 \hspace{0.19cm} }
 
 %%% ---- 论文前言 ----- %%%
 % 前言包括中英文封面、郑重声明、摘要与目录
@@ -1052,6 +1072,7 @@
 \cs_new_protected:Npn \__whu_make_front_matter_doctor:
   {
     \__whu_make_cover_master_doctor:
+    \restoregeometry
     \__whu_make_title_en:
     \__whu_make_statesment_master_doctor:
     \__whu_make_authorization:
@@ -1071,6 +1092,7 @@
 \cs_new_protected:Npn \__whu_make_front_matter_master:
   {
     \__whu_make_cover_master_doctor:
+    \restoregeometry
     \__whu_make_title_en:
     \__whu_make_statesment_master_doctor:
 
@@ -1189,87 +1211,149 @@
     \__whu_new_chapter_page:
   }
 
-\cs_new_protected:Npn \__whu_make_cover_master_doctor:
+
+\tl_if_eq:NnTF \g__whu_option_class_tl { academic }
+  {
+    \tl_set:Nn \g__whu_master_doctor_class_zh_tl { 学术学位 }
+  }
+  {
+    \tl_if_eq:NnT \g__whu_option_class_tl { professional }
+      { \tl_set:Nn \g__whu_master_doctor_class_zh_tl { 专业学位 } }
+  }
+
+\cs_new_protected:Npn \__whu_make_cover_master_doctor_academic:
   {
     \pagestyle { empty }
+    \newgeometry { hmargin = 2.445 cm , vmargin = 2.54cm }
     \__whu_set_baseline_skip:
-    \begin { center }
-      \begin { minipage } [ c ] [ 2.5 cm ] { \textwidth }
-        \fangsong \zihao { 4 } \mode_leave_vertical:
-        \hbox_to_wd:nn { 2 cm } { \__whu_spread_with:nn { 分类号 } { \hfill } }
-        \uline { \hbox_to_wd:nn { 2 cm } { \hfill \g__whu_info_clc_tl \hfill } }
-        \hfill
-        \hbox_to_wd:nn { 2 cm } { \__whu_spread_with:nn { 密级 } { \hfill } }
-        \uline
-          {
-            \hbox_to_wd:nn { 2 cm }
-              { \hfill \g__whu_info_secret_level_tl \hfill }
-          } \par \skip_vertical:n { 1 em } \mode_leave_vertical:
-        \hbox_to_wd:nn { 2 cm } { \__whu_spread_with:nn { UDC } { \hfill } }
-        \uline { \hbox_to_wd:nn { 2 cm } { \hfill \g__whu_info_udc_tl \hfill } }
-        \hfill
-        \hbox_to_wd:nn { 2 cm } { \__whu_spread_with:nn { 编号 } { \hfill } }
-        \uline
-          {
-            \hbox_to_wd:nn { 2 cm }
-              { \hfill \g__whu_info_school_number_tl \hfill }
-          }
-      \end { minipage }
-      \par \skip_vertical:n { 2 cm }
-      \includegraphics [ width = 5.5 cm ] { data / whu.pdf }
-      \par \skip_vertical:n { 1 cm }
-      { \zihao { 2 } \bfseries \c__whu_heading_tl }
-      \par \skip_vertical:n { 2.5 cm }
-      \begin { minipage } [ t ] [ 5 cm ] { \textwidth }
-        \skip_set:Nn \baselineskip { 40 pt }
-        \centering { \kaishu \zihao { 1 } \g__whu_info_title_tl }
-      \end { minipage } \par
-      \group_begin:
-        \zihao { 4 }
-        \begin { tabular } { l @ { ： \hbox:n {} } l }
-        \tl_if_eq:NnTF \g__whu_option_type_tl { doctor }
-          {
-            \__whu_spread_with:nn { 研究生姓名 } { \hfill } &
-            \__whu_spread_with:nn
-              { \g__whu_info_author_tl } { \hfill } \\ [ 0.5 em ]
-            \__whu_spread_with:nn { 指导教师姓名、职称 } { \hfill } &
-            \__whu_spread_with:nn
-              { \clist_use:Nn \g__whu_info_advisor_clist { \quad } }
-              { \hfill } \\ [ 0.5 em ]
-            \__whu_spread_with:nn { 学科、专业名称 } { \hfill } &
-            \__whu_spread_with:nn
-              { \g__whu_info_subject_tl 、 \g__whu_info_major_tl }
-              { \hfill } \\ [ 0.5 em ]
-            \__whu_spread_with:nn { 研究方向 } { \hfill } &
-            \__whu_spread_with:nn
-              { \g__whu_info_direction_tl } { \hfill } \\ [ 0.5 em ]
-          }
-          {
-            \__whu_spread_with:nn { 研究生姓名 } { \hfill } &
-            \g__whu_info_author_tl \\ [ 0.5 em ]
-            \__whu_spread_with:nn { 学号 } { \hfill } &
-            \g__whu_info_student_number_tl \\ [ 0.5 em ]
-            \__whu_spread_with:nn { 指导教师姓名、职称 } { \hfill } &
-            \clist_use:Nn \g__whu_info_advisor_clist { \enskip } \\ [ 0.5 em ]
-            \tl_if_eq:NnTF \g__whu_option_class_tl { academic }
-              {
-                \__whu_spread_with:nn { 专业名称 } { \hfill } &
-                \g__whu_info_major_tl \\ [ 0.5 em ]
-                \__whu_spread_with:nn { 研究方向 } { \hfill } &
-                \g__whu_info_direction_tl \\ [ 0.5 em ]
-              }
-              {
-                \__whu_spread_with:nn { 专业类别 { （领 } { 域） } } { \hfill }
-                & \g__whu_info_major_tl \\ [ 0.5 em ]
-              }
-          }
-        \end { tabular }
-      \group_end:
-      \par \vfill
-      { \heiti \zihao { 3 } \__whu_date_parse:V { \g__whu_info_date_tl } }
-    \end { center }
+    {\centering
+    \noindent
+    \begin{minipage}[b][0.9cm][b]{\textwidth}
+      \fangsong \zihao{4} \mode_leave_vertical:
+      \__whu_spread_box_with_end_spaces:nn { 2.04cm } { 分类号 }
+      \uline { \hbox_to_wd:nn { 2.41cm } { \hfill \g__whu_info_clc_tl \hfill } }
+      \hfill
+      \__whu_spread_box_with_end_spaces:nn { 1.67cm } { 密级 }
+      \uline { \hbox_to_wd:nn { 2.4cm } { \hfill \g__whu_info_secret_level_tl \hfill } }
+    \end{minipage}\par
+    \begin{minipage}[b][0.9cm][b]{\textwidth}
+      \fangsong \zihao{4} \mode_leave_vertical:
+      \__whu_spread_box_with_end_spaces:nn { 2.04cm } { UDC }
+      \uline { \hbox_to_wd:nn { 2.41cm } { \hfill \g__whu_info_udc_tl \hfill } }
+      \hfill
+      \__whu_spread_box_with_end_spaces:nn { 1.67cm } { 编号 }
+      \uline { \hbox_to_wd:nn { 2.4cm } { \hfill \g__whu_info_school_number_tl \hfill } }
+    \end{minipage}
+    \par \skip_vertical:n { 2 cm }
+    \begin{minipage}[t][3.5cm]{\textwidth}
+      \centering
+      \includegraphics [ width = 5.41 cm ] { data / whu.pdf }
+      \vfil
+      { \zihao{2} \bfseries \c__whu_heading_tl }
+      \vfil
+    \end{minipage}
+    \par
+    \begin{minipage}[t][2.25cm]{\textwidth}
+      \centering \zihao{-2} \bfseries（\g__whu_master_doctor_class_zh_tl）
+    \end{minipage}
+    \par
+    \begin{minipage}[t][4.49cm]{\textwidth}
+      \centering \zihao{1} \kaishu \g__whu_info_title_tl
+    \end{minipage}
+    \par
+    \begin{minipage}[c][5.55cm]{\textwidth}
+      \hspace*{2.19cm} \zihao { 4 }
+      \def\arraystretch{1.44}
+      \begin{tabular}{ @{} c @{} p{0.42cm} @{} c @{} }
+        \__whu_spread_box_with_end_spaces:nn { 4.67cm } { 研究生姓名 }
+          & ：& \__whu_spread_box_with_end_spaces:nn { 6.17cm } { \g__whu_info_author_tl } \\
+        \__whu_spread_box_with_end_spaces:nn { 4.67cm } { 学号 }
+          & ：& \__whu_spread_box_with_end_spaces:nn { 6.17cm } { \g__whu_info_student_number_tl } \\
+        \__whu_spread_box_with_end_spaces:nn { 4.67cm } { 校内导师姓名、职称 }
+          & ：& \__whu_spread_box_with_end_spaces:nn { 6.17cm }
+                  { \clist_use:Nn \g__whu_info_advisor_clist { } } \\
+        \__whu_spread_box_with_end_spaces:nn { 4.67cm } { 学科、专业名称 }
+          & ：& \__whu_spread_box_with_end_spaces:nn { 6.17cm } { \g__whu_info_subject_tl 、 \g__whu_info_major_tl } \\
+        \__whu_spread_box_with_end_spaces:nn { 4.67cm } { 研究方向 }
+          & ：& \__whu_spread_box_with_end_spaces:nn { 6.17cm } { \g__whu_info_direction_tl } \\
+      \end{tabular}\hfil
+    \end{minipage}
+    \par \vspace{1.95cm}
+    \begin{minipage}[c][0.81cm]{\textwidth}
+      \centering \heiti \zihao { 3 } \__whu_date_parse:V { \g__whu_info_date_tl }
+    \end{minipage}}
     \__whu_new_chapter_page:
   }
+
+\cs_new_protected:Npn \__whu_make_cover_master_doctor_professional:
+  {
+    \pagestyle { empty }
+    \newgeometry { hmargin = 2.445 cm , vmargin = 2.54cm }
+    \__whu_set_baseline_skip:
+    {\centering
+    \noindent
+    \begin{minipage}[b][0.9cm][b]{\textwidth}
+      \fangsong \zihao{4} \mode_leave_vertical:
+      \__whu_spread_box_with_end_spaces:nn { 2.04cm } { 分类号 }
+      \uline { \hbox_to_wd:nn { 2.41cm } { \hfill \g__whu_info_clc_tl \hfill } }
+      \hfill
+      \__whu_spread_box_with_end_spaces:nn { 1.67cm } { 密级 }
+      \uline { \hbox_to_wd:nn { 2.4cm } { \hfill \g__whu_info_secret_level_tl \hfill } }
+    \end{minipage}\par
+    \begin{minipage}[b][0.9cm][b]{\textwidth}
+      \fangsong \zihao{4} \mode_leave_vertical:
+      \__whu_spread_box_with_end_spaces:nn { 2.04cm } { UDC }
+      \uline { \hbox_to_wd:nn { 2.41cm } { \hfill \g__whu_info_udc_tl \hfill } }
+      \hfill
+      \__whu_spread_box_with_end_spaces:nn { 1.67cm } { 编号 }
+      \uline { \hbox_to_wd:nn { 2.4cm } { \hfill \g__whu_info_school_number_tl \hfill } }
+    \end{minipage}
+    \par \skip_vertical:n { 2 cm }
+    \begin{minipage}[t][3.5cm]{\textwidth}
+      \centering
+      \includegraphics [ width = 5.41 cm ] { data / whu.pdf }
+      \vfil
+      { \zihao{2} \bfseries \c__whu_heading_tl }
+      \vfil
+    \end{minipage}
+    \par
+    \begin{minipage}[t][2.25cm]{\textwidth}
+      \centering \zihao{-2} \bfseries（\g__whu_master_doctor_class_zh_tl）
+    \end{minipage}
+    \par
+    \begin{minipage}[t][4.49cm]{\textwidth}
+      \centering \zihao{1} \kaishu \g__whu_info_title_tl
+    \end{minipage}
+    \par
+    \begin{minipage}[c][6.66cm]{\textwidth}
+      \hspace*{2.19cm} \zihao { 4 }
+      \def\arraystretch{1.44}
+      \begin{tabular}{ @{} c @{} p{0.42cm} @{} c @{} }
+        \__whu_spread_box_with_end_spaces:nn { 4.67cm } { 研究生姓名 }
+          & ：& \__whu_spread_box_with_end_spaces:nn { 6.17cm } { \g__whu_info_author_tl } \\
+        \__whu_spread_box_with_end_spaces:nn { 4.67cm } { 学号 }
+          & ：& \__whu_spread_box_with_end_spaces:nn { 6.17cm } { \g__whu_info_student_number_tl } \\
+        \__whu_spread_box_with_end_spaces:nn { 4.67cm } { 校内导师姓名、职称 }
+          & ：& \__whu_spread_box_with_end_spaces:nn { 6.17cm }
+                  { \clist_use:Nn \g__whu_info_advisor_clist { } } \\
+        \__whu_spread_box_with_end_spaces:nn { 4.67cm } { 校外导师姓名、职称 }
+          & ：& \__whu_spread_box_with_end_spaces:nn { 6.17cm }
+                  { \clist_use:Nn \g__whu_info_advisor_outer_clist { } } \\
+        \__whu_spread_box_with_end_spaces:nn { 4.67cm } { 专业学位类别、领域 }
+          & ：& \__whu_spread_box_with_end_spaces:nn { 6.17cm } { \g__whu_info_subject_tl 、 \g__whu_info_major_tl } \\
+        \__whu_spread_box_with_end_spaces:nn { 4.67cm } { 研究方向 }
+          & ：& \__whu_spread_box_with_end_spaces:nn { 6.17cm } { \g__whu_info_direction_tl } \\
+      \end{tabular}\hfil
+    \end{minipage}
+    \par \vspace{1.95cm}
+    \begin{minipage}[c][0.81cm]{\textwidth}
+      \centering \heiti \zihao { 3 } \__whu_date_parse:V { \g__whu_info_date_tl }
+    \end{minipage}}
+    \__whu_new_chapter_page:
+  }
+
+\cs_new_eq:Nc \__whu_make_cover_master_doctor: 
+  { __whu_make_cover_master_doctor_ \g__whu_option_class_tl : }
 
 %%%% ---- 英文标题 ---- %%%%
 \cs_new_protected:Npn \__whu_make_title_en:
