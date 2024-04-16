@@ -1057,10 +1057,7 @@
         \hspace{0.19cm}
       }
   }
-
-% 分散函数，两端再加上 0.19cm 的间距
-\cs_new_protected:Npn \__whu_spread_with_both_end_spaces:nn #1#2
-  { \hspace{0.19cm} \__whu_spread_with:nn #1#2 \hspace{0.19cm} }
+  
 
 %%% ---- 论文前言 ----- %%%
 % 前言包括中英文封面、郑重声明、摘要与目录
