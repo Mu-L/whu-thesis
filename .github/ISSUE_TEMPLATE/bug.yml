@@ -26,8 +26,8 @@ body:
   - type: input
     id: branch
     attributes:
-      label: 您使用的仓库分支
-      placeholder: main / rebuild
+      label: 模板来源
+      placeholder: main 分支 / rebuild 分支 / 某个 release
     validations:
       required: true
   - type: textarea
