@@ -26,8 +26,10 @@ body:
   - type: input
     id: branch
     attributes:
-      label: 您使用的是仓库分支
+      label: 您使用的仓库分支
       placeholder: main / rebuild
+    validations:
+      required: true
   - type: textarea
     id: bug
     attributes:
